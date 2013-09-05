@@ -44,15 +44,16 @@ console.log("Opening HTTP Server...");
 http.createServer(function(request, response){
   var path = url.parse(request.url).pathname;
   var raw = '';
-  console.log('a request was received for: ' + path);
+  console.log('Received a POST callback');
   request.on('data', function(data){
     raw += data;
   });
   response.writeHead(200, {'Content-Type': 'text/plain' });
   request.on('end', function () {
-    console.log(raw);
+    raw = JSON.parse(raw);
+    console.log(raw['order']['total_btc']['cents']);
   });
-  response.end('Hello, World!');
+  response.end('Callback received');
 }).listen(8888);
 
 bot.on('loggedOn', function() {
