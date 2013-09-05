@@ -4,6 +4,8 @@ var fs = require('fs');
 var Steam = require('steam');
 var Coinbase = require('coinbase');
 var config = require('./config')
+var http = require('http');
+var url = require('url');
 var coin;
 
 var price = config.price; // key price in dollars per key
@@ -28,20 +30,34 @@ coin.account.balance(function(err,data){
   console.log("Balance:        " + data.amount + " BTC");
 });
 
-function ConnectCoinbase() {
-  console.log("Logging in to Coinbase...");
-  coin = new Coinbase({APIKey: config.coinbase.APIKey});
-  coin.account.balance(function(err,data){
-    console.log("Balance:        " + data.amount + " BTC");
+// Get exchange rates
+coin.currencies.exchangeRates(function(err,data){
+  rate = data.btc_to_usd;
+  btcprice = Math.round((price / rate) * 100000) / 100000
+  console.log("Exchange rate:  " + rate + "  $/BTC");
+  console.log("Key price:      $" + price);
+  console.log("Key price:      " + btcprice + " BTC");
+});
+
+// Init callback server
+console.log("Opening HTTP Server...");
+http.createServer(function(request, response){
+  var path = url.parse(request.url).pathname;
+  var raw = '';
+  console.log('a request was received for: ' + path);
+  request.on('data', function(data){
+    raw += data;
   });
-  coin.currencies.exchangeRates(function(err,data){
-    rate = data.btc_to_usd;
-    btcprice = Math.round((price / rate) * 100000) / 100000
-    console.log("Exchange rate:  " + rate + "  $/BTC");
-    console.log("Key price:      $" + price);
-    console.log("Key price:      " + btcprice + " BTC");
+  response.writeHead(200, {'Content-Type': 'text/plain' });
+  request.on('end', function () {
+    console.log(raw);
   });
-}
+  response.end('Hello, World!');
+}).listen(8888);
+
+bot.on('loggedOn', function() {
+  bot.setPersonaState(Steam.EPersonaState.Online);
+});
 
 bot.on('message', function(source, message, type, chatter) {
   if(!message){
