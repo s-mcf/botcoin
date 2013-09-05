@@ -10,6 +10,8 @@ var price = config.price; // key price in dollars per key
 var btcprice = 1;         // key price in BTC per key
 var rate = 1;             // Bitcoin price in dollars per BTC
 
+// Begin intialization
+// Log in to Steam
 console.log("Logging in to Steam...")
 var bot = new Steam.SteamClient();
 
@@ -19,9 +21,11 @@ bot.logOn({
   shaSentryfile: fs.readFileSync('sentryfile'),
 });
 
-bot.on('loggedOn', function() {
-  bot.setPersonaState(Steam.EPersonaState.Online);
-  ConnectCoinbase();
+// Log in to Coinbase
+console.log("Logging in to Coinbase...");
+coin = new Coinbase({APIKey: config.coinbase.APIKey});
+coin.account.balance(function(err,data){
+  console.log("Balance:        " + data.amount + " BTC");
 });
 
 function ConnectCoinbase() {
