@@ -11,6 +11,9 @@ var coin;
 var price = config.price; // key price in dollars per key
 var btcprice = 1;         // key price in BTC per key
 var rate = 1;             // Bitcoin price in dollars per BTC
+var uam = {};             // User/address map. Maps addresses to users and whether or not they have paid
+
+console.log(config.admins);
 
 // Begin intialization
 // Log in to Steam
@@ -65,7 +68,7 @@ bot.on('message', function(source, message, type, chatter) {
     return;
   }
   // respond to both chat room and private messages
-  console.log('Received message: ' + message);
+  console.log('Received message from ' + source + ': ' + message);
   if (message == 'ping') {
     bot.sendMessage(source, 'pong', Steam.EChatEntryType.ChatMsg); // ChatMsg by default
     bot.trade(source);
@@ -103,3 +106,12 @@ bot.on('sentry',function(sentryHash) {
     }
   });
 });
+
+function getKeyByValue(array, value) {
+    for( var prop in array ) {
+        if( this.hasOwnProperty( prop ) ) {
+             if( array[ prop ] === value )
+                 return prop;
+        }
+    }
+}
