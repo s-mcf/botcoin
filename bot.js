@@ -42,7 +42,7 @@ coin.currencies.exchangeRates(function(err,data){
   console.log("Key price:      " + btcprice + " BTC");
 });
 
-// Init callback server
+// Callback server
 console.log("Opening HTTP Server...");
 http.createServer(function(request, response){
   var path = url.parse(request.url).pathname;
@@ -53,8 +53,9 @@ http.createServer(function(request, response){
   });
   response.writeHead(200, {'Content-Type': 'text/plain' });
   request.on('end', function () {
+    console.log(raw);
     raw = JSON.parse(raw);
-    console.log(raw['order']['total_btc']['cents']);
+    bot.sendMessage(uam[raw['address']], "Your coins have been received! Send a trade request when you are ready.");
   });
   response.end('Callback received');
 }).listen(8888);
@@ -86,15 +87,30 @@ bot.on('message', function(source, message, type, chatter) {
 
 function buy(source, command) {
   bot.sendMessage(source, "Buying " + command[1] + " " + command[2]);
-  order = Math.round((btcprice * command[1]) * 100000) / 100000;
-  address = "1test";
-  bot.sendMessage(source, "Please send " + order + " BTC to " + address);
+  if(!(config.admins.indexOf(source) > -1)) {
+    order = Math.round((btcprice * command[1]) * 100000) / 100000;
+    coin.account.generateReceiveAddress(config.callback, function (err, data) {
+      if (err) throw err;
+      console.log(data);
+      uam[data['address']] = [source, false];
+      bot.sendMessage(source, "Please send " + order + " BTC to " + data['address']);
+    });
+  } else {
+    bot.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
+    uam[source] = [source, true];
+  }
 }
 
 bot.on('tradeProposed', function(trade, source) {
   console.log('Trade request');
-  bot.respondToTrade(trade, true);
-  bot.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
+  if(getKeyByValue(uam, [source, true])){
+    bot.respondToTrade(trade, true);
+    bot.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
+  }
+  else {
+    bot.respondToTrade(trade, false);
+    bot.sendMessage(source, "Either your coins have not arrived yet or you did not place an order.");
+  }
 });
 
 bot.on('sentry',function(sentryHash) {
