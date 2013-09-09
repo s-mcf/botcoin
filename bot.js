@@ -105,7 +105,7 @@ http.createServer(function(request, response){
       }
       keymap[user] += parseInt(raw['order']['custom']['amount']);
       console.log(raw['order']['custom']);
-      steam.sendMessage(user, "Your coins have been received! The steam now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
+      steam.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
     });
     response.end('Callback received');
   } else {
