@@ -46,25 +46,29 @@ coin.currencies.exchangeRates(function(err,data){
 console.log("Opening HTTP Server...");
 http.createServer(function(request, response){
   var path = url.parse(request.url).pathname;
-  var raw = '';
-  console.log('Received a POST callback');
-  request.on('data', function(data){
-    raw += data;
-  });
-  response.writeHead(200, {'Content-Type': 'text/plain' });
-  request.on('end', function () {
-    console.log(raw);
-    raw = JSON.parse(raw);
-    raw['order']['custom'] = JSON.parse(raw['order']['custom']);
-    user = raw['order']['custom']['user'];
-    if(!keymap[user]) {
-      keymap[user] = 0;
-    }
-    keymap[user] += parseInt(raw['order']['custom']['amount']);
-    console.log(raw['order']['custom']);
-    bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
-  });
-  response.end('Callback received');
+  if(path == '/' + config.secret){
+    var raw = '';
+    console.log('Received a POST callback');
+    request.on('data', function(data){
+      raw += data;
+    });
+    response.writeHead(200, {'Content-Type': 'text/plain' });
+    request.on('end', function () {
+      console.log(raw);
+      raw = JSON.parse(raw);
+      raw['order']['custom'] = JSON.parse(raw['order']['custom']);
+      user = raw['order']['custom']['user'];
+      if(!keymap[user]) {
+        keymap[user] = 0;
+      }
+      keymap[user] += parseInt(raw['order']['custom']['amount']);
+      console.log(raw['order']['custom']);
+      bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
+    });
+    response.end('Callback received');
+  } else {
+    response.abort();
+  }
 }).listen(8888);
 
 bot.on('loggedOn', function() {

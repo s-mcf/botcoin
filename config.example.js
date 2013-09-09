@@ -11,5 +11,6 @@ config.coinbase.APIKey = ''; // Coinbase API key
 config.price = 1.78; // key price in dollars
 config.callback = ''; // The URL Coinbase should ping when it recieves a payment
 config.admins = ['']; // Array of the ID64 numbers of the admins (as strings)
+config.secret = ""; // random string that only you and Coinbase knows to prevent fake callbacks
 
 module.exports = config;
