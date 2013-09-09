@@ -57,6 +57,7 @@ http.createServer(function(request, response){
     raw = JSON.parse(raw);
     user = raw['order']['custom']['user'];
     keymap[user] += raw['order']['custom']['amount'];
+    console.log(raw['order']['custom']);
     bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
   });
   response.end('Callback received');
@@ -96,7 +97,7 @@ function buy(source, command) {
                 "name": command[1] + " TF2 Keys",
                 "price_string": order,
                 "price_currency_iso": 'BTC',
-                "custom": {'user': source, 'amount': command[1]},
+                "custom": JSON.stringify({'user': source, 'amount': command[1]}),
                 "description": 'For user ' + source,
                 "type": 'buy_now',
                 "style": 'custom_large'
