@@ -67,6 +67,7 @@ http.createServer(function(request, response){
     });
     response.end('Callback received');
   } else {
+    response.statusCode = 401;
     response.end();
   }
 }).listen(8888);
