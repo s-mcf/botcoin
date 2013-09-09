@@ -89,12 +89,21 @@ function buy(source, command) {
   bot.sendMessage(source, "Buying " + command[1] + " " + command[2]);
   if(!(config.admins.indexOf(source) > -1)) {
     order = Math.round((btcprice * command[1]) * 100000) / 100000;
-    coin.account.generateReceiveAddress(config.callback, function (err, data) {
-      if (err) throw err;
-      console.log(data);
-      uam[data['address']] = [source, false];
-      bot.sendMessage(source, "Please send " + order + " BTC to " + data['address']);
-    });
+    var param = {
+              "button": {
+                "name": "TF2 Keys",
+                "price_string": order.toString(),
+                "price_currency_iso": 'BTC',
+                "custom": source,
+                "description": '',
+                "type": 'buy_now',
+                "style": 'custom_large'
+              }
+            };
+  coin.buttons.create(param, function (err, data) {
+    if (err) throw err;
+    console.log(data);
+  });
   } else {
     bot.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
     uam[source] = [source, true];
