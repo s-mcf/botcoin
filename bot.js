@@ -67,7 +67,7 @@ http.createServer(function(request, response){
     });
     response.end('Callback received');
   } else {
-    response.abort();
+    response.end();
   }
 }).listen(8888);
 
