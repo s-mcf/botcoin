@@ -11,7 +11,7 @@ var coin;
 var price = config.price; // key price in dollars per key
 var btcprice = 1;         // key price in BTC per key
 var rate = 1;             // Bitcoin price in dollars per BTC
-var uam = {};             // User/address map. Maps addresses to users and whether or not they have paid
+var keymap = {};          // Map of users to the amount of keys they have paid for
 
 console.log(config.admins);
 
@@ -36,7 +36,7 @@ coin.account.balance(function(err,data){
 // Get exchange rates
 coin.currencies.exchangeRates(function(err,data){
   rate = data.btc_to_usd;
-  btcprice = Math.round((price / rate) * 100000) / 100000
+  btcprice = price / rate;
   console.log("Exchange rate:  " + rate + "  $/BTC");
   console.log("Key price:      $" + price);
   console.log("Key price:      " + btcprice + " BTC");
@@ -88,14 +88,14 @@ bot.on('message', function(source, message, type, chatter) {
 function buy(source, command) {
   bot.sendMessage(source, "Buying " + command[1] + " " + command[2]);
   if(!(config.admins.indexOf(source) > -1)) {
-    order = Math.round((btcprice * command[1]) * 100000) / 100000;
+    order = btcprice * command[1];
     var param = {
               "button": {
-                "name": "TF2 Keys",
-                "price_string": order.toString(),
+                "name": command[1] + " TF2 Keys",
+                "price_string": order,
                 "price_currency_iso": 'BTC',
-                "custom": source,
-                "description": '',
+                "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+                "description": 'For user ' + source,
                 "type": 'buy_now',
                 "style": 'custom_large'
               }
