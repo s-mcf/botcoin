@@ -55,8 +55,12 @@ http.createServer(function(request, response){
   request.on('end', function () {
     console.log(raw);
     raw = JSON.parse(raw);
+    raw['order']['custom'] = JSON.parse(raw['order']['custom']);
     user = raw['order']['custom']['user'];
-    keymap[user] += raw['order']['custom']['amount'];
+    if(!keymap[user]) {
+      keymap[user] = 0;
+    }
+    keymap[user] += parseInt(raw['order']['custom']['amount']);
     console.log(raw['order']['custom']);
     bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
   });
