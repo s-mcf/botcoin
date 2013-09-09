@@ -2,11 +2,16 @@
 console.log("Botcoin dev build");
 var fs = require('fs');
 var Steam = require('steam');
+var SteamTrade = require('steam-trade');
 var Coinbase = require('coinbase');
 var config = require('./config')
 var http = require('http');
 var url = require('url');
 var coin;
+
+var inventory;
+var keys;
+var client;
 
 var price = config.price; // key price in dollars per key
 var btcprice = 1;         // key price in BTC per key
@@ -18,12 +23,49 @@ console.log(config.admins);
 // Begin intialization
 // Log in to Steam
 console.log("Logging in to Steam...")
-var bot = new Steam.SteamClient();
+var steam = new Steam.SteamClient();
+var steamTrade = new SteamTrade();
 
-bot.logOn({
+steam.logOn({
   accountName: config.steam.accountName,
   password: config.steam.password,
   shaSentryfile: fs.readFileSync('sentryfile'),
+});
+
+steam.on('webSessionID', function(sessionID) {
+  console.log('got a new session ID:', sessionID);
+  steamTrade.sessionID = sessionID;
+  steam.webLogOn(function(cookies) {
+    console.log('got a new cookie:', cookies);
+    cookies.split(';').forEach(function(cookie) {
+        steamTrade.setCookie(cookie);
+    });
+  });
+});
+
+steam.on('sessionStart', function(otherClient) {
+  inventory = [];
+  keys = [];
+  client = otherClient;
+
+  console.log('trading ' + steam.users[client].playerName);
+  steamTrade.open(otherClient);
+  steamTrade.loadInventory(440, 2, function(inv) {
+    inventory = inv;
+    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+  });
+
+  steamTrade.addItems(keys.slice(0, keymap[client]));
+});
+
+steamTrade.on('end', function(result) {console.log('trade', result);});
+
+steamTrade.on('ready', function() {
+  console.log('readying');
+  steamTrade.ready(function() {
+    console.log('confirming');
+    steamTrade.confirm();
+  });
 });
 
 // Log in to Coinbase
