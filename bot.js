@@ -55,7 +55,9 @@ http.createServer(function(request, response){
   request.on('end', function () {
     console.log(raw);
     raw = JSON.parse(raw);
-    bot.sendMessage(uam[raw['address']], "Your coins have been received! Send a trade request when you are ready.");
+    user = raw['order']['custom']['user'];
+    keymap[user] += raw['order']['custom']['amount'];
+    bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
   });
   response.end('Callback received');
 }).listen(8888);
@@ -94,7 +96,7 @@ function buy(source, command) {
                 "name": command[1] + " TF2 Keys",
                 "price_string": order,
                 "price_currency_iso": 'BTC',
-                "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+                "custom": {'user': source, 'amount': command[1]},
                 "description": 'For user ' + source,
                 "type": 'buy_now',
                 "style": 'custom_large'
@@ -103,16 +105,17 @@ function buy(source, command) {
   coin.buttons.create(param, function (err, data) {
     if (err) throw err;
     console.log(data);
+    bot.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
   });
   } else {
     bot.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
-    uam[source] = [source, true];
+    keymap[source] = command[1];
   }
 }
 
 bot.on('tradeProposed', function(trade, source) {
   console.log('Trade request');
-  if(getKeyByValue(uam, [source, true])){
+  if(keymap[source] > 0){
     bot.respondToTrade(trade, true);
     bot.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
   }
