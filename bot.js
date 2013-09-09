@@ -63,7 +63,7 @@ http.createServer(function(request, response){
       }
       keymap[user] += parseInt(raw['order']['custom']['amount']);
       console.log(raw['order']['custom']);
-      bot.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
+      steam.sendMessage(user, "Your coins have been received! The steam now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
     });
     response.end('Callback received');
   } else {
@@ -72,19 +72,19 @@ http.createServer(function(request, response){
   }
 }).listen(8888);
 
-bot.on('loggedOn', function() {
-  bot.setPersonaState(Steam.EPersonaState.Online);
+steam.on('loggedOn', function() {
+  steam.setPersonaState(Steam.EPersonaState.Online);
 });
 
-bot.on('message', function(source, message, type, chatter) {
+steam.on('message', function(source, message, type, chatter) {
   if(!message){
     return;
   }
-  // respond to both chat room and private messages
+  // respond to steamh chat room and private messages
   console.log('Received message from ' + source + ': ' + message);
   if (message == 'ping') {
-    bot.sendMessage(source, 'pong', Steam.EChatEntryType.ChatMsg); // ChatMsg by default
-    bot.trade(source);
+    steam.sendMessage(source, 'pong', Steam.EChatEntryType.ChatMsg); // ChatMsg by default
+    steam.trade(source);
   } else {
     command = message.split(' ');
     switch (command[0]) {
@@ -92,13 +92,13 @@ bot.on('message', function(source, message, type, chatter) {
         buy(source, command);
         break;
       default:
-        bot.sendMessage(source, "I'm sorry, that's not a valid command.");
+        steam.sendMessage(source, "I'm sorry, that's not a valid command.");
     }
   }
 });
 
 function buy(source, command) {
-  bot.sendMessage(source, "Buying " + command[1] + " " + command[2]);
+  steam.sendMessage(source, "Buying " + command[1] + " " + command[2]);
   if(!(config.admins.indexOf(source) > -1)) {
     order = btcprice * command[1];
     var param = {
@@ -115,27 +115,27 @@ function buy(source, command) {
   coin.buttons.create(param, function (err, data) {
     if (err) throw err;
     console.log(data);
-    bot.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+    steam.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
   });
   } else {
-    bot.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
+    steam.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
     keymap[source] = command[1];
   }
 }
 
-bot.on('tradeProposed', function(trade, source) {
+steam.on('tradeProposed', function(trade, source) {
   console.log('Trade request');
   if(keymap[source] > 0){
-    bot.respondToTrade(trade, true);
-    bot.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
+    steam.respondToTrade(trade, true);
+    steam.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
   }
   else {
-    bot.respondToTrade(trade, false);
-    bot.sendMessage(source, "Either your coins have not arrived yet or you did not place an order.");
+    steam.respondToTrade(trade, false);
+    steam.sendMessage(source, "Either your coins have not arrived yet or you did not place an order.");
   }
 });
 
-bot.on('sentry',function(sentryHash) {
+steam.on('sentry',function(sentryHash) {
   fs.writeFile('sentryfile',sentryHash,function(err) {
     if(err){
       console.log(err);
