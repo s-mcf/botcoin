@@ -64,7 +64,10 @@ steamTrade.on('ready', function() {
   console.log('readying');
   steamTrade.ready(function() {
     console.log('confirming');
-    steamTrade.confirm();
+    steamTrade.confirm(function() {
+        keymap[client] = 0;
+      });
+    );
   });
 });
 
