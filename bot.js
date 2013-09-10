@@ -14,11 +14,10 @@ var keys;
 var client;
 
 var price = config.price; // key price in dollars per key
-var btcprice = 1;         // key price in BTC per key
-var rate = 1;             // Bitcoin price in dollars per BTC
 var keymap = {};          // Map of users to the amount of keys they have paid for
 
 console.log(config.admins);
+console.log("Key price: $" + price);
 
 // Begin intialization
 // Log in to Steam
@@ -78,15 +77,6 @@ coin.account.balance(function(err,data){
   console.log("Balance:        " + data.amount + " BTC");
 });
 
-// Get exchange rates
-coin.currencies.exchangeRates(function(err,data){
-  rate = data.btc_to_usd;
-  btcprice = price / rate;
-  console.log("Exchange rate:  " + rate + "  $/BTC");
-  console.log("Key price:      $" + price);
-  console.log("Key price:      " + btcprice + " BTC");
-});
-
 // Callback server
 console.log("Opening HTTP Server...");
 http.createServer(function(request, response){
@@ -136,21 +126,32 @@ steam.on('message', function(source, message, type, chatter) {
       case "buy":
         buy(source, command);
         break;
+      case "inventory":
+        displayInv(source);
+        break;
       default:
         steam.sendMessage(source, "I'm sorry, that's not a valid command.");
     }
   }
 });
 
+function displayInv(source) {
+  steamTrade.loadInventory(440, 2, function(inv) {
+    //keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+    //steam.sendMessage(source, "Currently there are " + keys.length + " in my inventory.");
+    console.log(inv);
+  });
+}
+
 function buy(source, command) {
   steam.sendMessage(source, "Buying " + command[1] + " " + command[2]);
   if(!(config.admins.indexOf(source) > -1)) {
-    order = btcprice * command[1];
+    order = price * command[1];
     var param = {
               "button": {
                 "name": command[1] + " TF2 Keys",
                 "price_string": order,
-                "price_currency_iso": 'BTC',
+                "price_currency_iso": 'USD',
                 "custom": JSON.stringify({'user': source, 'amount': command[1]}),
                 "description": 'For user ' + source,
                 "type": 'buy_now',
