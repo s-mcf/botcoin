@@ -1,4 +1,4 @@
 Botcoin
 =======
 
-A Steam bot that buys and selling TF2 items for Bitcoin
+A Steam bot that buys and sells TF2 items for Bitcoin
