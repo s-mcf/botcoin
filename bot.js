@@ -36,7 +36,7 @@ steam.on('webSessionID', function(sessionID) {
   steamTrade.sessionID = sessionID;
   steam.webLogOn(function(cookies) {
     console.log('got a new cookie:', cookies);
-    cookies.split(';').forEach(function(cookie) {
+    cookies.forEach(function(cookie) {
         steamTrade.setCookie(cookie);
     });
   });
@@ -64,9 +64,8 @@ steamTrade.on('ready', function() {
   steamTrade.ready(function() {
     console.log('confirming');
     steamTrade.confirm(function() {
-        keymap[client] = 0;
-      });
-    );
+      keymap[client] = 0;
+    });
   });
 });
 
