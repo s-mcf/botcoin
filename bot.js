@@ -31,6 +31,14 @@ steam.logOn({
   shaSentryfile: fs.readFileSync('sentryfile'),
 });
 
+steam.on('loggedOn', function() {
+  steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+  steam.gamesPlayed([440]);
+  config.admins.forEach(function(friend){
+    steam.addFriend(friend);
+  });
+});
+
 steam.on('webSessionID', function(sessionID) {
   console.log('got a new session ID:', sessionID);
   steamTrade.sessionID = sessionID;
@@ -105,10 +113,6 @@ http.createServer(function(request, response){
     response.end();
   }
 }).listen(8888);
-
-steam.on('loggedOn', function() {
-  steam.setPersonaState(Steam.EPersonaState.Online);
-});
 
 steam.on('message', function(source, message, type, chatter) {
   if(!message){
