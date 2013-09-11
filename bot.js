@@ -194,6 +194,16 @@ steam.on('sentry',function(sentryHash) {
   });
 });
 
+steam.on('friend', function(other, type){
+  console.log(other + " is " + type);
+  if(type == Steam.EFriendRelationship.PendingInvitee)
+  {
+     steam.addFriend(other);
+     console.log("Added " + other);
+     steam.sendMessage(other, "Welcome! Type help to begin!");
+  }
+});
+
 function getKeyByValue(array, value) {
     for( var prop in array ) {
         if( this.hasOwnProperty( prop ) ) {
