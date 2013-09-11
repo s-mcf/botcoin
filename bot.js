@@ -98,6 +98,11 @@ http.createServer(function(request, response){
     request.on('end', function () {
       console.log(raw);
       raw = JSON.parse(raw);
+      if(raw['transaction']['confirmations'] < 1){
+        response.statuscode = 402; // Payment required
+        response.end('Not confirmed');
+        return;
+      }
       raw['order']['custom'] = JSON.parse(raw['order']['custom']);
       user = raw['order']['custom']['user'];
       if(!keymap[user]) {
@@ -109,7 +114,7 @@ http.createServer(function(request, response){
     });
     response.end('Callback received');
   } else {
-    response.statusCode = 401;
+    response.statusCode = 401; // Unauthorized
     response.end();
   }
 }).listen(8888);
