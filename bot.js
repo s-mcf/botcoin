@@ -146,29 +146,35 @@ function displayInv(source) {
 }
 
 function buy(source, command) {
-  steam.sendMessage(source, "Buying " + command[1] + " " + command[2]);
-  if(!(config.admins.indexOf(source) > -1)) {
-    order = price * command[1];
-    var param = {
-              "button": {
-                "name": command[1] + " TF2 Keys",
-                "price_string": order,
-                "price_currency_iso": 'USD',
-                "custom": JSON.stringify({'user': source, 'amount': command[1]}),
-                "description": 'For user ' + source,
-                "type": 'buy_now',
-                "style": 'custom_large'
-              }
-            };
-  coin.buttons.create(param, function (err, data) {
-    if (err) throw err;
-    console.log(data);
-    steam.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+  steamTrade.loadInventory(440, 2, function(inv) {
+    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+    if(command[1] > keys.length) {
+      steam.sendMessage(source, "Sorry, you're asking for more keys than I have!");
+      return;
+    }
+    if(!(config.admins.indexOf(source) > -1)) {
+      order = price * command[1];
+      var param = {
+                "button": {
+                  "name": command[1] + " TF2 Keys",
+                  "price_string": order,
+                  "price_currency_iso": 'USD',
+                  "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+                  "description": 'For user ' + source,
+                  "type": 'buy_now',
+                  "style": 'custom_large'
+                }
+              };
+    coin.buttons.create(param, function (err, data) {
+      if (err) throw err;
+      console.log(data);
+      steam.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+    });
+    } else {
+      steam.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
+      keymap[source] = command[1];
+    }
   });
-  } else {
-    steam.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
-    keymap[source] = command[1];
-  }
 }
 
 steam.on('tradeProposed', function(trade, source) {
