@@ -98,19 +98,19 @@ http.createServer(function(request, response){
     request.on('end', function () {
       console.log(raw);
       raw = JSON.parse(raw);
-      if(raw['transaction']['confirmations'] < 1){
-        response.statuscode = 402; // Payment required
+      if(raw['order']['transaction']['confirmations'] < 1 && raw['order']['transaction']['hash']){
+        response.statusCode = 402; // Payment required
         response.end('Not confirmed');
-        return;
+      } else {
+        raw['order']['custom'] = JSON.parse(raw['order']['custom']);
+        user = raw['order']['custom']['user'];
+        if(!keymap[user]) {
+          keymap[user] = 0;
+        }
+        keymap[user] += parseInt(raw['order']['custom']['amount']);
+        console.log(raw['order']['custom']);
+        steam.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
       }
-      raw['order']['custom'] = JSON.parse(raw['order']['custom']);
-      user = raw['order']['custom']['user'];
-      if(!keymap[user]) {
-        keymap[user] = 0;
-      }
-      keymap[user] += parseInt(raw['order']['custom']['amount']);
-      console.log(raw['order']['custom']);
-      steam.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
     });
     response.end('Callback received');
   } else {
