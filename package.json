@@ -1,6 +1,6 @@
 {
   "name": "botcoin",
-  "version": "0.1-dev",
+  "version": "0.1.0",
   "description": "Sells Steam items for Bitcoin",
   "author": "Simon McFarlane <illuminatedgeek@gmail.com>",
   "main": "./bot",
@@ -11,7 +11,7 @@
   "dependencies": {
     "node-steam": "*",
     "node-steam-trade": "*",
-    "coinbase": "*",
+    "coinbase": "*"
   },
   "engines": {
     "node": "0.10.x"
