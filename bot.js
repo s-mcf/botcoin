@@ -140,9 +140,8 @@ steam.on('message', function(source, message, type, chatter) {
 
 function displayInv(source) {
   steamTrade.loadInventory(440, 2, function(inv) {
-    //keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-    //steam.sendMessage(source, "Currently there are " + keys.length + " in my inventory.");
-    console.log(inv);
+    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+    steam.sendMessage(source, "Currently there are " + keys.length + " keys in my inventory.");
   });
 }
 
