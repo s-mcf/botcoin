@@ -121,12 +121,12 @@ http.createServer(function(request, response){
 
 steam.on('message', function(source, message, type, chatter) {
   if(!message){
+    // The user typing triggers a blank message
     return;
   }
-  // respond to steamh chat room and private messages
-  console.log('Received message from ' + source + ': ' + message);
+  console.log('From ' + source + ': ' + message);
   if (message == 'ping') {
-    steam.sendMessage(source, 'pong', Steam.EChatEntryType.ChatMsg); // ChatMsg by default
+    send(source, 'pong');
     steam.trade(source);
   } else {
     command = message.split(' ');
@@ -154,29 +154,36 @@ function buy(source, command) {
   steamTrade.loadInventory(440, 2, function(inv) {
     keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
     if(command[1] > keys.length) {
-      steam.sendMessage(source, "Sorry, you're asking for more keys than I have!");
+      send(source, "Sorry, you're asking for more keys than I have!");
+      return;
+    } else if(parseInt(command[1]) < 1 || isNaN(parseInt(command[1])) || command[1] % 1 != 0) {
+      send(source, "Please specify how many keys you want.");
       return;
     }
     if(!(config.admins.indexOf(source) > -1)) {
       order = price * command[1];
       var param = {
-                "button": {
-                  "name": command[1] + " TF2 Keys",
-                  "price_string": order,
-                  "price_currency_iso": 'USD',
-                  "custom": JSON.stringify({'user': source, 'amount': command[1]}),
-                  "description": 'For user ' + source,
-                  "type": 'buy_now',
-                  "style": 'custom_large'
-                }
-              };
-    coin.buttons.create(param, function (err, data) {
-      if (err) throw err;
-      console.log(data);
-      steam.sendMessage(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
-    });
+        "button": {
+          "name": command[1] + " TF2 Keys",
+          "price_string": order,
+          "price_currency_iso": 'USD',
+          "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+          "description": 'For user ' + source,
+          "type": 'buy_now',
+          "style": 'custom_large'
+        }
+      };
+      coin.buttons.create(param, function (err, data) {
+        if (err) {
+          send(source, "An error occurred and my creator has been notified. Please try again.");
+          console.log("ERR: " + source + ": " + err);
+        } else {
+          console.log(data);
+          send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+        }
+      });
     } else {
-      steam.sendMessage(source, "Ah, I see you are an admin! Here, have some keys on me.");
+      send(source, "Ah, I see you are an admin! Here, have some keys on me.");
       keymap[source] = command[1];
     }
   });
