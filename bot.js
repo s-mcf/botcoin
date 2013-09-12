@@ -90,7 +90,6 @@ http.createServer(function(request, response){
   var path = url.parse(request.url).pathname;
   if(path == '/' + config.secret){
     var raw = '';
-    console.log('Received a POST callback');
     request.on('data', function(data){
       raw += data;
     });
@@ -114,6 +113,7 @@ http.createServer(function(request, response){
       }
     });
   } else {
+    console.warn("WARN " + "Got an unauthorized callback from " + request.connection.remoteAddress);
     response.statusCode = 401; // Unauthorized
     response.end();
   }
