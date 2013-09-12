@@ -94,14 +94,14 @@ http.createServer(function(request, response){
     request.on('data', function(data){
       raw += data;
     });
-    response.writeHead(200, {'Content-Type': 'text/plain' });
     request.on('end', function () {
       console.log(raw);
       raw = JSON.parse(raw);
       if(raw['order']['transaction']['confirmations'] < 1 && raw['order']['transaction']['hash']){
-        response.statusCode = 402; // Payment required
+        response.writeHead(402, {'Content-Type': 'text/plain' });
         response.end('Not confirmed');
       } else {
+        response.writeHead(200, {'Content-Type': 'text/plain' });
         raw['order']['custom'] = JSON.parse(raw['order']['custom']);
         user = raw['order']['custom']['user'];
         if(!keymap[user]) {
@@ -110,9 +110,9 @@ http.createServer(function(request, response){
         keymap[user] += parseInt(raw['order']['custom']['amount']);
         console.log(raw['order']['custom']);
         steam.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
+        response.end('Callback received');
       }
     });
-    response.end('Callback received');
   } else {
     response.statusCode = 401; // Unauthorized
     response.end();
