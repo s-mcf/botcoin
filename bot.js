@@ -109,7 +109,7 @@ http.createServer(function(request, response){
         }
         keymap[user] += parseInt(raw['order']['custom']['amount']);
         console.log(raw['order']['custom']);
-        steam.sendMessage(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
+        send(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
         response.end('Callback received');
       }
     });
@@ -138,7 +138,7 @@ steam.on('message', function(source, message, type, chatter) {
         displayInv(source);
         break;
       default:
-        steam.sendMessage(source, "I'm sorry, that's not a valid command.");
+        send(source, "I'm sorry, that's not a valid command.");
     }
   }
 });
@@ -146,7 +146,7 @@ steam.on('message', function(source, message, type, chatter) {
 function displayInv(source) {
   steamTrade.loadInventory(440, 2, function(inv) {
     keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-    steam.sendMessage(source, "Currently there are " + keys.length + " keys in my inventory.");
+    send(source, "Currently there are " + keys.length + " keys in my inventory.");
   });
 }
 
@@ -186,11 +186,11 @@ steam.on('tradeProposed', function(trade, source) {
   console.log('Trade request');
   if(keymap[source] > 0){
     steam.respondToTrade(trade, true);
-    steam.sendMessage(source, "Traded",Steam.EChatEntryType.ChatMsg);
+    send(source, "Traded");
   }
   else {
     steam.respondToTrade(trade, false);
-    steam.sendMessage(source, "Either your coins have not arrived yet or you did not place an order.");
+    send(source, "Either your coins have not arrived yet or you did not place an order.");
   }
 });
 
@@ -210,9 +210,15 @@ steam.on('friend', function(other, type){
   {
      steam.addFriend(other);
      console.log("Added " + other);
-     steam.sendMessage(other, "Welcome! Type help to begin!");
+     send(other, "Welcome! Type help to begin!");
   }
 });
+
+// ---- Misc. ---- //
+function send(source, msg) {
+  console.log('Sent ' + source + ": " + msg);
+  steam.sendMessage(source, msg);
+}
 
 function getKeyByValue(array, value) {
     for( var prop in array ) {
