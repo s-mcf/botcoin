@@ -1,5 +1,4 @@
 #! /usr/local/bin/node
-console.log("Botcoin dev build");
 var fs = require('fs');
 var Steam = require('steam');
 var SteamTrade = require('steam-trade');
@@ -16,10 +15,8 @@ var client;
 var price = config.price; // key price in dollars per key
 var keymap = {};          // Map of users to the amount of keys they have paid for
 
-console.log(config.admins);
-console.log("Key price: $" + price);
-
 // Begin intialization
+
 // Log in to Steam
 console.log("Logging in to Steam...")
 var steam = new Steam.SteamClient();
@@ -31,49 +28,13 @@ steam.logOn({
   shaSentryfile: fs.readFileSync('sentryfile'),
 });
 
-steam.on('loggedOn', function() {
-  steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
-  steam.gamesPlayed([440]);
-  config.admins.forEach(function(friend){
-    steam.addFriend(friend);
-  });
-});
-
-steam.on('webSessionID', function(sessionID) {
-  console.log('got a new session ID:', sessionID);
-  steamTrade.sessionID = sessionID;
-  steam.webLogOn(function(cookies) {
-    console.log('got a new cookie:', cookies);
-    cookies.forEach(function(cookie) {
-        steamTrade.setCookie(cookie);
-    });
-  });
-});
-
-steam.on('sessionStart', function(otherClient) {
-  inventory = [];
-  keys = [];
-  client = otherClient;
-
-  console.log('trading ' + steam.users[client].playerName);
-  steamTrade.open(otherClient);
-  steamTrade.loadInventory(440, 2, function(inv) {
-    inventory = inv;
-    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-  });
-
-  steamTrade.addItems(keys.slice(0, keymap[client]));
-});
-
-steamTrade.on('end', function(result) {console.log('trade', result);});
-
-steamTrade.on('ready', function() {
-  console.log('readying');
-  steamTrade.ready(function() {
-    console.log('confirming');
-    steamTrade.confirm(function() {
-      keymap[client] = 0;
-    });
+steam.on('sentry',function(sentryHash) {
+  fs.writeFile('sentryfile',sentryHash,function(err) {
+    if(err){
+      console.log(err);
+    } else {
+      console.log('Saved sentry file hash as "sentryfile"');
+    }
   });
 });
 
@@ -81,7 +42,8 @@ steamTrade.on('ready', function() {
 console.log("Logging in to Coinbase...");
 coin = new Coinbase({APIKey: config.coinbase.APIKey});
 coin.account.balance(function(err,data){
-  console.log("Balance:        " + data.amount + " BTC");
+  console.log("Balance:    " + data.amount + " BTC");
+  console.log("Key price: $" + price);
 });
 
 // Callback server
@@ -119,30 +81,105 @@ http.createServer(function(request, response){
   }
 }).listen(8888);
 
-steam.on('message', function(source, message, type, chatter) {
-  if(!message){
-    // The user typing triggers a blank message
-    return;
-  }
-  console.log('From ' + source + ': ' + message);
-  if (message == 'ping') {
-    send(source, 'pong');
-    steam.trade(source);
-  } else {
-    command = message.split(' ');
-    switch (command[0]) {
-      case "buy":
-        buy(source, command);
-        break;
-      case "inventory":
-        displayInv(source);
-        break;
-      default:
-        send(source, "I'm sorry, that's not a valid command.");
-    }
-  }
+steam.on('loggedOn', function() {
+  steam.setPersonaState(Steam.EPersonaState.Busy);
+  steam.gamesPlayed([440]);
+  config.admins.forEach(function(friend){
+    steam.addFriend(friend);
+  });
 });
 
+steam.on('webSessionID', function(sessionID) {
+  steamTrade.sessionID = sessionID;
+  steam.webLogOn(function(cookies) {
+    cookies.forEach(function(cookie) {
+      steamTrade.setCookie(cookie);
+    });
+    // We're not ready to chat until we load the inventory
+    ready();
+  });
+});
+
+function ready() {
+  // Handle friend requests
+  steam.on('friend', function(other, type){
+    console.log("Log: " + other + ": status is now " + getKeyByValue(Steam.EFriendRelationship, type));
+    if(type == Steam.EFriendRelationship.PendingInvitee)
+    {
+       steam.addFriend(other);
+       console.log("Add: " + other);
+       send(other, "Welcome! Type help to begin!");
+    }
+  });
+  // Handle trades
+  steam.on('sessionStart', function(otherClient) {
+    inventory = [];
+    keys = [];
+    client = otherClient;
+
+    console.log('trading ' + steam.users[client].playerName);
+    steamTrade.open(otherClient);
+    steamTrade.loadInventory(440, 2, function(inv) {
+      inventory = inv;
+      keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+    });
+
+    steamTrade.addItems(keys.slice(0, keymap[client]));
+  });
+  steamTrade.on('end', function(result) {console.log('trade', result);});
+  steamTrade.on('ready', function() {
+    console.log('readying');
+    steamTrade.ready(function() {
+      console.log('confirming');
+      steamTrade.confirm(function() {
+        keymap[client] = 0;
+      });
+    });
+  });
+  // Handle messages
+  steam.on('message', function(source, message, type, chatter) {
+    if(!message){
+      // The user typing triggers a blank message
+      return;
+    }
+    console.log('From ' + source + ': ' + message);
+    if (message == 'ping') {
+      send(source, 'pong');
+      steam.trade(source);
+    } else {
+      command = message.split(' ');
+      switch (command[0]) {
+        case "buy":
+          buy(source, command);
+          break;
+        case "inventory":
+          displayInv(source);
+          break;
+        default:
+          send(source, "I'm sorry, that's not a valid command.");
+      }
+    }
+  });
+  // Handle trade requests
+  steam.on('tradeProposed', function(trade, source) {
+    console.log('Trade request');
+    if(keymap[source] > 0){
+      steam.respondToTrade(trade, true);
+      send(source, "Traded");
+    }
+    else {
+      steam.respondToTrade(trade, false);
+      send(source, "Either your coins have not arrived yet or you did not place an order.");
+    }
+  });
+  steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+  console.log("Bot is ready now!");
+  console.log("-----------------");
+}
+
+// ---- Commands ---- //
+
+// Implement 'inventory'
 function displayInv(source) {
   steamTrade.loadInventory(440, 2, function(inv) {
     keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
@@ -150,6 +187,7 @@ function displayInv(source) {
   });
 }
 
+// Implement 'buy'
 function buy(source, command) {
   steamTrade.loadInventory(440, 2, function(inv) {
     keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
@@ -176,9 +214,8 @@ function buy(source, command) {
       coin.buttons.create(param, function (err, data) {
         if (err) {
           send(source, "An error occurred and my creator has been notified. Please try again.");
-          console.log("ERR: " + source + ": " + err);
+          console.error("ERR: " + source + ": " + err);
         } else {
-          console.log(data);
           send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
         }
       });
@@ -189,49 +226,19 @@ function buy(source, command) {
   });
 }
 
-steam.on('tradeProposed', function(trade, source) {
-  console.log('Trade request');
-  if(keymap[source] > 0){
-    steam.respondToTrade(trade, true);
-    send(source, "Traded");
-  }
-  else {
-    steam.respondToTrade(trade, false);
-    send(source, "Either your coins have not arrived yet or you did not place an order.");
-  }
-});
-
-steam.on('sentry',function(sentryHash) {
-  fs.writeFile('sentryfile',sentryHash,function(err) {
-    if(err){
-      console.log(err);
-    } else {
-      console.log('Saved sentry file hash as "sentryfile"');
-    }
-  });
-});
-
-steam.on('friend', function(other, type){
-  console.log(other + " is " + type);
-  if(type == Steam.EFriendRelationship.PendingInvitee)
-  {
-     steam.addFriend(other);
-     console.log("Added " + other);
-     send(other, "Welcome! Type help to begin!");
-  }
-});
-
 // ---- Misc. ---- //
 function send(source, msg) {
   console.log('Sent ' + source + ": " + msg);
   steam.sendMessage(source, msg);
 }
 
-function getKeyByValue(array, value) {
-    for( var prop in array ) {
-        if( this.hasOwnProperty( prop ) ) {
-             if( array[ prop ] === value )
-                 return prop;
-        }
-    }
+function getKeyByValue(set, value) {
+   for(var k in set) {
+      if(set.hasOwnProperty(k)) {
+         if(set[k] == value) {
+            return k;
+         }
+      }
+   }
+   return undefined;
 }
