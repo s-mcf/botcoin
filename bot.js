@@ -158,6 +158,9 @@ function ready() {
         case "help":
           help(source);
           break;
+        case "price":
+          setPrice(source, command);
+          break;
         default:
           send(source, "I'm sorry, that's not a valid command.");
       }
@@ -181,6 +184,15 @@ function ready() {
 }
 
 // ---- Commands ---- //
+
+function setPrice(source, command) {
+  if(!(config.admins.indexOf(source) > -1) || isNaN(command[1])) {
+    send(source, "The current key price is $" + price);
+  } else {
+    price = command[1];
+    setPrice(source, []);
+  }
+}
 
 // Implement 'inventory'
 function displayInv(source) {
