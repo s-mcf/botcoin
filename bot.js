@@ -155,6 +155,9 @@ function ready() {
         case "inventory":
           displayInv(source);
           break;
+        case "help":
+          help(source);
+          break;
         default:
           send(source, "I'm sorry, that's not a valid command.");
       }
@@ -224,6 +227,14 @@ function buy(source, command) {
       keymap[source] = command[1];
     }
   });
+}
+
+function help(source) {
+  send(source, "Welcome to Botcoin!\
+    Type 'buy x', where x is the number of keys you want to start the buying process. \
+    You can also type 'inventory' to see how many keys I have, \
+    and 'price' will tell you the current key price."
+  );
 }
 
 // ---- Misc. ---- //
