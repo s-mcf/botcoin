@@ -101,15 +101,15 @@ steam.on('webSessionID', function(sessionID) {
 });
 
 function ready() {
+  // Handle offline friend requests
+  for (friend in steam.friends) {
+    if(steam.friends[friend] == Steam.EFriendRelationship.RequestRecipient) {
+      makeFriend(friend, steam.friends[friend]);
+    }
+  }
   // Handle friend requests
   steam.on('friend', function(other, type){
-    console.log("Log: " + other + ": status is now " + getKeyByValue(Steam.EFriendRelationship, type));
-    if(type == Steam.EFriendRelationship.PendingInvitee)
-    {
-       steam.addFriend(other);
-       console.log("Add: " + other);
-       send(other, "Welcome! Type help to begin!");
-    }
+    makeFriend(other, type);
   });
   // Handle trades
   steam.on('sessionStart', function(otherClient) {
@@ -250,6 +250,15 @@ function help(source) {
 }
 
 // ---- Misc. ---- //
+function makeFriend(other, type) {
+  console.log("Log: " + other + ": status is now " + getKeyByValue(Steam.EFriendRelationship, type));
+  if(type == Steam.EFriendRelationship.PendingInvitee)
+  {
+     steam.addFriend(other);
+     send(other, "Welcome! Type help to begin!");
+  }
+}
+
 function send(source, msg) {
   console.log('Sent ' + source + ": " + msg);
   steam.sendMessage(source, msg);
