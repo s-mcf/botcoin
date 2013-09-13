@@ -83,7 +83,6 @@ http.createServer(function(request, response){
 
 steam.on('loggedOn', function() {
   steam.setPersonaState(Steam.EPersonaState.Busy);
-  steam.gamesPlayed([440]);
   config.admins.forEach(function(friend){
     steam.addFriend(friend);
   });
@@ -179,6 +178,7 @@ function ready() {
     }
   });
   steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+  steam.gamesPlayed([440]);
   console.log("Bot is ready now!");
   console.log("-----------------");
 }
