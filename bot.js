@@ -121,9 +121,8 @@ function ready() {
     steamTrade.loadInventory(440, 2, function(inv) {
       inventory = inv;
       keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+      steamTrade.addItems(keys.slice(0, keymap[client]));
     });
-
-    steamTrade.addItems(keys.slice(0, keymap[client]));
   });
   steamTrade.on('end', function(result) {console.log('trade', result);});
   steamTrade.on('ready', function() {
