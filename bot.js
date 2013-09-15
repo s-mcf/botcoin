@@ -124,14 +124,17 @@ function ready() {
       steamTrade.addItems(keys.slice(0, keymap[client]));
     });
   });
-  steamTrade.on('end', function(result) {console.log('trade', result);});
+  steamTrade.on('end', function(result) {
+    console.log('Log: ' + client + ' executed a ' + result + ' trade');
+    if (result == 'complete') {
+	  keymap[client] = 0;
+    }
+  });
   steamTrade.on('ready', function() {
-    console.log('readying');
+    console.log('Log: ' + client + ' is ready');
     steamTrade.ready(function() {
-      console.log('confirming');
-      steamTrade.confirm(function() {
-        keymap[client] = 0;
-      });
+      console.log('Log: ' + client + ' is confirming');
+      steamTrade.confirm();
     });
   });
   // Handle messages
