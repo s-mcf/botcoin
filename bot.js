@@ -170,9 +170,8 @@ function ready() {
   // Handle trade requests
   steam.on('tradeProposed', function(trade, source) {
     console.log('Trade request');
-    if(keymap[source] > 0){
+    if(keymap[source] > 0 || config.admins.indexOf(source) > -1){
       steam.respondToTrade(trade, true);
-      send(source, "Traded");
     }
     else {
       steam.respondToTrade(trade, false);
