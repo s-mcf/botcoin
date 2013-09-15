@@ -116,7 +116,7 @@ function ready() {
     keys = [];
     client = otherClient;
 
-    console.log('trading ' + steam.users[client].playerName);
+    console.log('Log: trading ' + steam.users[client]);
     steamTrade.open(otherClient);
     steamTrade.loadInventory(440, 2, function(inv) {
       inventory = inv;
@@ -169,7 +169,7 @@ function ready() {
   });
   // Handle trade requests
   steam.on('tradeProposed', function(trade, source) {
-    console.log('Trade request');
+    console.log('Log: ' + source + ' requests a trade');
     if(keymap[source] > 0 || config.admins.indexOf(source) > -1){
       steam.respondToTrade(trade, true);
     }
