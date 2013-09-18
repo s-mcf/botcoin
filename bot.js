@@ -152,7 +152,6 @@ function ready() {
     console.log('From ' + source + ': ' + message);
     if (message == 'ping') {
       send(source, 'pong');
-      steam.trade(source);
     } else {
       command = message.split(' ');
       switch (command[0]) {
