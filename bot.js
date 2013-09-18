@@ -185,7 +185,6 @@ function ready() {
     }
   });
   steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
-  steam.gamesPlayed([440]);
   console.log("Bot is ready now!");
   console.log("-----------------");
 }
