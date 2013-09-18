@@ -116,12 +116,20 @@ function ready() {
     keys = [];
     client = otherClient;
 
-    console.log('Log: trading ' + steam.users[client]);
+    console.log('Log: ' + client + ' is trading');
     steamTrade.open(otherClient);
     steamTrade.loadInventory(440, 2, function(inv) {
       inventory = inv;
       keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-      steamTrade.addItems(keys.slice(0, keymap[client]));
+      theirkeys = [];
+      if(keymap[client]) {
+        theirkeys = keys.slice(0, keymap[client]);
+      }
+      steamTrade.addItems(theirkeys, function(){
+        steamTrade.ready(function() {
+          steamTrade.confirm();
+        });
+      });
     });
   });
   steamTrade.on('end', function(result) {
@@ -131,9 +139,7 @@ function ready() {
     }
   });
   steamTrade.on('ready', function() {
-    console.log('Log: ' + client + ' is ready');
     steamTrade.ready(function() {
-      console.log('Log: ' + client + ' is confirming');
       steamTrade.confirm();
     });
   });
