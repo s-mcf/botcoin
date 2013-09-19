@@ -201,6 +201,7 @@ function ready() {
     console.log("-----------------");
   } else {
     console.log("Log: we got a new set of cookies");
+    steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
   }
 }
 
