@@ -12,6 +12,8 @@ var inventory;
 var keys;
 var client;
 
+var isReady = false;
+
 var price = config.price; // key price in dollars per key
 var keymap = {};          // Map of users to the amount of keys they have paid for
 
@@ -100,92 +102,97 @@ steam.on('webSessionID', function(sessionID) {
 });
 
 function ready() {
-  // Handle offline friend requests
-  for (friend in steam.friends) {
-    if(steam.friends[friend] == Steam.EFriendRelationship.RequestRecipient) {
-      makeFriend(friend, steam.friends[friend]);
-    }
-  }
-  // Handle friend requests
-  steam.on('friend', function(other, type){
-    makeFriend(other, type);
-  });
-  // Handle trades
-  steam.on('sessionStart', function(otherClient) {
-    inventory = [];
-    keys = [];
-    client = otherClient;
-
-    console.log('Log: ' + client + ' is trading');
-    steamTrade.open(otherClient);
-    steamTrade.loadInventory(440, 2, function(inv) {
-      inventory = inv;
-      keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-      theirkeys = [];
-      if(keymap[client]) {
-        theirkeys = keys.slice(0, keymap[client]);
+  if(!isReady) {
+    // Handle offline friend requests
+    for (friend in steam.friends) {
+      if(steam.friends[friend] == Steam.EFriendRelationship.RequestRecipient) {
+        makeFriend(friend, steam.friends[friend]);
       }
-      steamTrade.addItems(theirkeys, function(){
-        steamTrade.ready(function() {
-          steamTrade.confirm();
+    }
+    // Handle friend requests
+    steam.on('friend', function(other, type){
+      makeFriend(other, type);
+    });
+    // Handle trades
+    steam.on('sessionStart', function(otherClient) {
+      inventory = [];
+      keys = [];
+      client = otherClient;
+  
+      console.log('Log: ' + client + ' is trading');
+      steamTrade.open(otherClient);
+      steamTrade.loadInventory(440, 2, function(inv) {
+        inventory = inv;
+        keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+        theirkeys = [];
+        if(keymap[client]) {
+          theirkeys = keys.slice(0, keymap[client]);
+        }
+        steamTrade.addItems(theirkeys, function(){
+          steamTrade.ready(function() {
+            steamTrade.confirm();
+          });
         });
       });
     });
-  });
-  steamTrade.on('end', function(result) {
-    console.log('Log: ' + client + ' executed a ' + result + ' trade');
-    if (result == 'complete') {
-	  keymap[client] = 0;
-    }
-  });
-  steamTrade.on('ready', function() {
-    steamTrade.ready(function() {
-      steamTrade.confirm();
-    });
-  });
-  // Handle messages
-  steam.on('message', function(source, message, type, chatter) {
-    if(!message){
-      // The user typing triggers a blank message
-      return;
-    }
-    console.log('From ' + source + ': ' + message);
-    if (message == 'ping') {
-      send(source, 'pong');
-    } else {
-      command = message.split(' ');
-      switch (command[0]) {
-        case "buy":
-          buy(source, command);
-          break;
-        case "inventory":
-          displayInv(source);
-          break;
-        case "help":
-          help(source);
-          break;
-        case "price":
-          setPrice(source, command);
-          break;
-        default:
-          send(source, "I'm sorry, that's not a valid command.");
+    steamTrade.on('end', function(result) {
+      console.log('Log: ' + client + ' executed a ' + result + ' trade');
+      if (result == 'complete') {
+      keymap[client] = 0;
       }
-    }
-  });
-  // Handle trade requests
-  steam.on('tradeProposed', function(trade, source) {
-    console.log('Log: ' + source + ' requests a trade');
-    if(keymap[source] > 0 || config.admins.indexOf(source) > -1){
-      steam.respondToTrade(trade, true);
-    }
-    else {
-      steam.respondToTrade(trade, false);
-      send(source, "Either your coins have not arrived yet or you did not place an order.");
-    }
-  });
-  steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
-  console.log("Bot is ready now!");
-  console.log("-----------------");
+    });
+    steamTrade.on('ready', function() {
+      steamTrade.ready(function() {
+        steamTrade.confirm();
+      });
+    });
+    // Handle messages
+    steam.on('message', function(source, message, type, chatter) {
+      if(!message){
+        // The user typing triggers a blank message
+        return;
+      }
+      console.log('From ' + source + ': ' + message);
+      if (message == 'ping') {
+        send(source, 'pong');
+      } else {
+        command = message.split(' ');
+        switch (command[0]) {
+          case "buy":
+            buy(source, command);
+            break;
+          case "inventory":
+            displayInv(source);
+            break;
+          case "help":
+            help(source);
+            break;
+          case "price":
+            setPrice(source, command);
+            break;
+          default:
+            send(source, "I'm sorry, that's not a valid command.");
+        }
+      }
+    });
+    // Handle trade requests
+    steam.on('tradeProposed', function(trade, source) {
+      console.log('Log: ' + source + ' requests a trade');
+      if(keymap[source] > 0 || config.admins.indexOf(source) > -1){
+        steam.respondToTrade(trade, true);
+      }
+      else {
+        steam.respondToTrade(trade, false);
+        send(source, "Either your coins have not arrived yet or you did not place an order.");
+      }
+    });
+    steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+    isReady = true;
+    console.log("Bot is ready now!");
+    console.log("-----------------");
+  } else {
+    console.log("Log: we got a new set of cookies");
+  }
 }
 
 // ---- Commands ---- //
