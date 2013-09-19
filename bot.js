@@ -7,7 +7,10 @@ var config = require('./config')
 var http = require('http');
 var url = require('url');
 var util = require('util');
+var redis = require('redis');
+
 var coin;
+var rclient;
 
 var inventory;
 var keys;
@@ -16,7 +19,6 @@ var client;
 var isReady = false;
 
 var price = config.price; // key price in dollars per key
-var keymap = {};          // Map of users to the amount of keys they have paid for
 
 // Begin intialization
 
@@ -49,6 +51,9 @@ coin.account.balance(function(err,data){
   console.log("Key price: $" + price);
 });
 
+console.log("Connecting to Redis...");
+rclient = redis.createClient();
+
 // Callback server
 console.log("Opening HTTP Server...");
 http.createServer(function(request, response){
@@ -68,13 +73,12 @@ http.createServer(function(request, response){
         response.writeHead(200, {'Content-Type': 'text/plain' });
         raw['order']['custom'] = JSON.parse(raw['order']['custom']);
         user = raw['order']['custom']['user'];
-        if(!keymap[user]) {
-          keymap[user] = 0;
-        }
-        keymap[user] += parseInt(raw['order']['custom']['amount']);
-        console.log(raw['order']['custom']);
-        send(user, "Your coins have been received! The bot now owes you " + keymap[user] + " keys. Send a trade request when you are ready.");
-        response.end('Callback received');
+        rclient.incrby("keys:"+user, parseInt(raw['order']['custom']['amount']), function(){
+          rclient.get("keys:"+user, function(err, obj) {
+            send(user, "Your coins have been received! The bot now owes you " + obj + " keys. Send a trade request when you are ready.");
+            response.end('Callback received');
+          });
+        });
       }
     });
   } else {
@@ -126,12 +130,14 @@ function ready() {
         inventory = inv;
         keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
         theirkeys = [];
-        if(keymap[client]) {
-          theirkeys = keys.slice(0, keymap[client]);
-        }
-        steamTrade.addItems(theirkeys, function(){
-          steamTrade.ready(function() {
-            steamTrade.confirm();
+        rclient.get("keys:"+client, function(err, obj) {
+          if(obj) {
+            theirkeys = keys.slice(0, obj);
+          }
+          steamTrade.addItems(theirkeys, function(){
+            steamTrade.ready(function() {
+              steamTrade.confirm();
+            });
           });
         });
       });
@@ -139,7 +145,7 @@ function ready() {
     steamTrade.on('end', function(result) {
       console.log('Log: ' + client + ' executed a ' + result + ' trade');
       if (result == 'complete') {
-      keymap[client] = 0;
+        rclient.set("keys:"+client, 0);
       }
     });
     steamTrade.on('ready', function() {
@@ -179,13 +185,15 @@ function ready() {
     // Handle trade requests
     steam.on('tradeProposed', function(trade, source) {
       console.log('Log: ' + source + ' requests a trade');
-      if(keymap[source] > 0 || config.admins.indexOf(source) > -1){
-        steam.respondToTrade(trade, true);
-      }
-      else {
-        steam.respondToTrade(trade, false);
-        send(source, "Either your coins have not arrived yet or you did not place an order.");
-      }
+      rclient.get("keys:"+source, function(err, obj) {
+        if(obj > 0 || config.admins.indexOf(source) > -1){
+          steam.respondToTrade(trade, true);
+        }
+        else {
+          steam.respondToTrade(trade, false);
+          send(source, "Either your coins have not arrived yet or you did not place an order.");
+        }
+      });
     });
     steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
     isReady = true;
@@ -249,7 +257,7 @@ function buy(source, command) {
       });
     } else {
       send(source, "Ah, I see you are an admin! Here, have some keys on me.");
-      keymap[source] = command[1];
+      rclient.set("keys:"+source, parseInt(command[1]));
     }
   });
 }
