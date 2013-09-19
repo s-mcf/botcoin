@@ -6,6 +6,7 @@ var Coinbase = require('coinbase');
 var config = require('./config')
 var http = require('http');
 var url = require('url');
+var util = require('util');
 var coin;
 
 var inventory;
@@ -58,7 +59,7 @@ http.createServer(function(request, response){
       raw += data;
     });
     request.on('end', function () {
-      console.log(raw);
+      util.log(raw);
       raw = JSON.parse(raw);
       if(raw['order']['transaction']['confirmations'] < 1 && raw['order']['transaction']['hash']){
         response.writeHead(402, {'Content-Type': 'text/plain' });
