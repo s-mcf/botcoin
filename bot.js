@@ -146,6 +146,7 @@ function ready() {
       console.log('Log: ' + client + ' executed a ' + result + ' trade');
       if (result == 'complete') {
         rclient.set("keys:"+client, 0);
+        checkInv();
       }
     });
     steamTrade.on('ready', function() {
@@ -170,6 +171,7 @@ function ready() {
             break;
           case "inventory":
             displayInv(source);
+            checkInv();
             break;
           case "help":
             help(source);
@@ -272,6 +274,20 @@ function help(source) {
 }
 
 // ---- Misc. ---- //
+function checkInv() {
+  steamTrade.loadInventory(440, 2, function(inv) {
+    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
+    if (keys.length < 1){
+      console.warn("Log: out of keys");
+      steam.setPersonaName("Botcoin OUT OF STOCK");
+      steam.setPersonaState(Steam.EPersonaState.Away);
+    } else {
+      steam.setPersonaName("Botcoin");
+      steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+    }
+  });
+}
+
 function makeFriend(other, type) {
   console.log("Log: " + other + ": status is now " + getKeyByValue(Steam.EFriendRelationship, type));
   if(type == Steam.EFriendRelationship.PendingInvitee)
