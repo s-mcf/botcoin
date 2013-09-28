@@ -203,7 +203,7 @@ function ready() {
     console.log("-----------------");
   } else {
     console.log("Log: we got a new set of cookies");
-    steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+    checkInv();
   }
 }
 
@@ -279,10 +279,10 @@ function checkInv() {
     keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
     if (keys.length < 1){
       console.warn("Log: out of keys");
-      steam.setPersonaName("Botcoin OUT OF STOCK");
+      steam.setPersonaName("Botcoin - OUT OF STOCK");
       steam.setPersonaState(Steam.EPersonaState.Away);
     } else {
-      steam.setPersonaName("Botcoin");
+      steam.setPersonaName("Botcoin - " + keys.length + " in stock");
       steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
     }
   });
