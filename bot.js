@@ -66,7 +66,7 @@ http.createServer(function(request, response){
     request.on('end', function () {
       util.log(raw);
       raw = JSON.parse(raw);
-      if(raw['order']['transaction']['confirmations'] < 1 && raw['order']['transaction']['hash']){
+      if(raw['order']['transaction']['confirmations'] < config.confirmations && raw['order']['transaction']['hash']){
         response.writeHead(402, {'Content-Type': 'text/plain' });
         response.end('Not confirmed');
       } else {
