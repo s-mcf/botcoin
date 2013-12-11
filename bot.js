@@ -263,7 +263,7 @@ function buy(source, command) {
         });
       } else {
         send(source, "Ah, I see you are an admin! Here, have some keys on me.");
-        rclient.set("keys:"+source, parseInt(command[1]));
+        rclient.incrby("keys:"+source, parseInt(command[1]));
         rclient.incrby("reserved", parseInt(command[1]));
       }
     });
