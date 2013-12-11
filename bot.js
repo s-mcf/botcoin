@@ -150,7 +150,7 @@ function ready() {
         rclient.get("keys:"+client, function(err,obj){
           rclient.decrby("reserved", obj);
         });
-        rclient.incrby("keys:"+client, 0);
+        rclient.set("keys:"+client, 0);
         checkInv(function(){});
       }
     });
