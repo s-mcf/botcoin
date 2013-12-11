@@ -151,7 +151,7 @@ function ready() {
           rclient.decrby("reserved", obj);
         });
         rclient.set("keys:"+client, 0);
-        checkInv();
+        checkInv(function(){});
       }
     });
     steamTrade.on('ready', function() {
