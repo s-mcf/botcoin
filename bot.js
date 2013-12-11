@@ -207,7 +207,7 @@ function ready() {
     console.log("-----------------");
   } else {
     console.log("Log: we got a new set of cookies");
-    checkInv();
+    checkInv(function(){});
   }
 }
 
@@ -224,7 +224,9 @@ function setPrice(source, command) {
 
 // Implement 'inventory'
 function displayInv(source) {
-    send(source, "Currently there are " + checkInv() + " keys in my inventory.");
+  checkInv(function(stock){
+    send(source, "Currently there are " + stock + " keys in my inventory.");
+  });
 }
 
 // Implement 'buy'
@@ -277,7 +279,7 @@ function help(source) {
 }
 
 // ---- Misc. ---- //
-function checkInv() {
+function checkInv(fn) {
   steamTrade.loadInventory(440, 2, function(inv) {
     rclient.get("reserved", function(err, obj){
       stock = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';}).length - obj;
@@ -289,7 +291,7 @@ function checkInv() {
         steam.setPersonaName("Botcoin - " + stock + " in stock");
         steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
       }
-      return stock;
+      fn(stock);
     });
   });
 }
