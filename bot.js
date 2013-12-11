@@ -76,6 +76,7 @@ http.createServer(function(request, response){
         rclient.incrby("keys:"+user, parseInt(raw['order']['custom']['amount']), function(){
           rclient.get("keys:"+user, function(err, obj) {
             send(user, "Your coins have been received! The bot now owes you " + obj + " keys. Send a trade request when you are ready.");
+            rclient.incrby("sold", obj);
             response.end('Callback received');
           });
         });
