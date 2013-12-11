@@ -78,6 +78,7 @@ http.createServer(function(request, response){
             send(user, "Your coins have been received! The bot now owes you " + obj + " keys. Send a trade request when you are ready.");
             rclient.incrby("sold", obj);
             rclient.incrby("reserved", obj);
+            checkInv(function(){});
             response.end('Callback received');
           });
         });
