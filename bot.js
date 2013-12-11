@@ -77,6 +77,7 @@ http.createServer(function(request, response){
           rclient.get("keys:"+user, function(err, obj) {
             send(user, "Your coins have been received! The bot now owes you " + obj + " keys. Send a trade request when you are ready.");
             rclient.incrby("sold", obj);
+            rclient.incrby("reserved", obj);
             response.end('Callback received');
           });
         });
@@ -146,6 +147,9 @@ function ready() {
     steamTrade.on('end', function(result) {
       console.log('Log: ' + client + ' executed a ' + result + ' trade');
       if (result == 'complete') {
+        rclient.get("keys:"+client, function(err,obj){
+          rclient.decrby("reserved", obj);
+        });
         rclient.set("keys:"+client, 0);
         checkInv();
       }
@@ -230,39 +234,41 @@ function displayInv(source) {
 // Implement 'buy'
 function buy(source, command) {
   steamTrade.loadInventory(440, 2, function(inv) {
-    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-    if(command[1] > keys.length) {
-      send(source, "Sorry, you're asking for more keys than I have!");
-      return;
-    } else if(parseInt(command[1]) < 1 || isNaN(parseInt(command[1])) || command[1] % 1 != 0) {
-      send(source, "Please specify how many keys you want.");
-      return;
-    }
-    if(!(config.admins.indexOf(source) > -1)) {
-      order = price * command[1];
-      var param = {
-        "button": {
-          "name": command[1] + " TF2 Keys",
-          "price_string": order,
-          "price_currency_iso": 'USD',
-          "custom": JSON.stringify({'user': source, 'amount': command[1]}),
-          "description": 'For user ' + source,
-          "type": 'buy_now',
-          "style": 'custom_large'
-        }
-      };
-      coin.buttons.create(param, function (err, data) {
-        if (err) {
-          send(source, "An error occurred and my creator has been notified. Please try again.");
-          console.error("ERR: " + source + ": " + err);
-        } else {
-          send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
-        }
-      });
-    } else {
-      send(source, "Ah, I see you are an admin! Here, have some keys on me.");
-      rclient.set("keys:"+source, parseInt(command[1]));
-    }
+    rclient.get("reserved", function(err, obj){
+      stock = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';}).length - obj;    if(command[1] > stock) {
+        send(source, "Sorry, you're asking for more keys than I have!");
+        return;
+      } else if(parseInt(command[1]) < 1 || isNaN(parseInt(command[1])) || command[1] % 1 != 0) {
+        send(source, "Please specify how many keys you want.");
+        return;
+      }
+      if(!(config.admins.indexOf(source) > -1)) {
+        order = price * command[1];
+        var param = {
+          "button": {
+            "name": command[1] + " TF2 Keys",
+            "price_string": order,
+            "price_currency_iso": 'USD',
+            "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+            "description": 'For user ' + source,
+            "type": 'buy_now',
+            "style": 'custom_large'
+          }
+        };
+        coin.buttons.create(param, function (err, data) {
+          if (err) {
+            send(source, "An error occurred and my creator has been notified. Please try again.");
+            console.error("ERR: " + source + ": " + err);
+          } else {
+            send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+          }
+        });
+      } else {
+        send(source, "Ah, I see you are an admin! Here, have some keys on me.");
+        rclient.set("keys:"+source, parseInt(command[1]));
+        rclient.incrby("reserved", parseInt(command[1]));
+      }
+    });
   });
 }
 
@@ -277,15 +283,17 @@ function help(source) {
 // ---- Misc. ---- //
 function checkInv() {
   steamTrade.loadInventory(440, 2, function(inv) {
-    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-    if (keys.length < 1){
-      console.warn("Log: out of keys");
-      steam.setPersonaName("Botcoin - OUT OF STOCK");
-      steam.setPersonaState(Steam.EPersonaState.Away);
-    } else {
-      steam.setPersonaName("Botcoin - " + keys.length + " in stock");
-      steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
-    }
+    rclient.get("reserved", function(err, obj){
+      stock = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';}).length - obj;
+      if (stock < 1){
+        console.warn("Log: out of keys");
+        steam.setPersonaName("Botcoin - OUT OF STOCK");
+        steam.setPersonaState(Steam.EPersonaState.Away);
+      } else {
+        steam.setPersonaName("Botcoin - " + stock + " in stock");
+        steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
+      }
+    });
   });
 }
 
