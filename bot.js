@@ -176,7 +176,6 @@ function ready() {
             break;
           case "inventory":
             displayInv(source);
-            checkInv();
             break;
           case "help":
             help(source);
@@ -225,10 +224,7 @@ function setPrice(source, command) {
 
 // Implement 'inventory'
 function displayInv(source) {
-  steamTrade.loadInventory(440, 2, function(inv) {
-    keys = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';});
-    send(source, "Currently there are " + keys.length + " keys in my inventory.");
-  });
+    send(source, "Currently there are " + checkInv() + " keys in my inventory.");
 }
 
 // Implement 'buy'
@@ -293,6 +289,7 @@ function checkInv() {
         steam.setPersonaName("Botcoin - " + stock + " in stock");
         steam.setPersonaState(Steam.EPersonaState.LookingToTrade);
       }
+      return stock;
     });
   });
 }
