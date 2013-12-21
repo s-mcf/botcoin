@@ -234,7 +234,8 @@ function displayInv(source) {
 function buy(source, command) {
   steamTrade.loadInventory(440, 2, function(inv) {
     rclient.get("reserved", function(err, obj){
-      stock = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';}).length - obj;    if(command[1] > stock) {
+      stock = inv.filter(function(item) { return item.name == 'Mann Co. Supply Crate Key';}).length - obj;
+      if(command[1] > stock) {
         send(source, "Sorry, you're asking for more keys than I have!");
         return;
       } else if(parseInt(command[1]) < 1 || isNaN(parseInt(command[1])) || command[1] % 1 != 0) {
