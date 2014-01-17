@@ -11,7 +11,8 @@
   "dependencies": {
     "steam": "*",
     "steam-trade": "git+ssh://git@github.com:seishun/node-steam-trade.git",
-    "coinbase": "*"
+    "coinbase": "*",
+    "redis": "*"
   },
   "engines": {
     "node": "0.10.x"
