@@ -75,10 +75,10 @@ http.createServer(function(request, response){
         raw['order']['custom'] = JSON.parse(raw['order']['custom']);
         user = raw['order']['custom']['user'];
         rclient.incrby("keys:"+user, parseInt(raw['order']['custom']['amount']), function(){
+          rclient.incrby("reserved", parseInt(raw['order']['custom']['amount']));
           rclient.get("keys:"+user, function(err, obj) {
             send(user, "Your coins have been received! The bot now owes you " + obj + " keys. Send a trade request when you are ready.");
             rclient.incrby("sold", obj);
-            rclient.incrby("reserved", obj);
             checkInv(function(){});
             response.end('Callback received');
           });
