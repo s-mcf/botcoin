@@ -184,6 +184,9 @@ function ready() {
           case "price":
             setPrice(source, command);
             break;
+          case "mode":
+            setMode(source, command);
+            break;
           default:
             send(source, "I'm sorry, that's not a valid command.");
         }
@@ -220,6 +223,28 @@ function setPrice(source, command) {
   } else {
     price = command[1];
     setPrice(source, []);
+  }
+}
+
+function setMode(source,command) {
+  if(command[1]) {
+    mode = command[1].toLowerCase()
+    if(mode == "bitcoin") {
+      rclient.set("mode:"+source, mode);
+      send(source, "Your buying mode has been set to Bitcoin");
+    } else if (mode == "dogecoin") {
+      rclient.set("mode:"+source, mode);
+      send(source, "wow very mode change. such dogecoin");
+    } else {
+        send(source, "I'm sorry, that's not a valid mode. You can select Dogecoin or Bitcoin.");
+    }
+  } else {
+    rclient.get("mode:"+source, function(err, obj){
+      if(obj){
+        send(source, "Your current buying mode is " + obj);
+      } else {
+        send(source, "Your current buying mode is bitcoin");
+    });
   }
 }
 
