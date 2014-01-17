@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "Sells Steam items for Bitcoin",
   "author": "Simon McFarlane <illuminatedgeek@gmail.com>",
-  "main": "./bot",
+  "main": "./bot.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:illuminatedgeek/botcoin.git"
+    "url": "git+ssh://git@github.com:illuminatedgeek/botcoin.git"
   },
   "dependencies": {
     "steam": "*",
-    "steam-trade": "git@github.com:seishun/node-steam-trade.git",
+    "steam-trade": "git+ssh://git@github.com:seishun/node-steam-trade.git",
     "coinbase": "*"
   },
   "engines": {
