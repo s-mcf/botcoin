@@ -3,6 +3,7 @@ var fs = require('fs');
 var Steam = require('steam');
 var SteamTrade = require('steam-trade');
 var Coinbase = require('coinbase');
+var doge = require('./node_modules/dogeapi.js/src/index.js') // I know this is dumb, but the DogeAPI.js module is awful and this appears to be the only way to import it
 var config = require('./config')
 var http = require('http');
 var url = require('url');
@@ -184,6 +185,9 @@ function ready() {
           case "price":
             setPrice(source, command);
             break;
+          case "mode":
+            setMode(source, command);
+            break;
           default:
             send(source, "I'm sorry, that's not a valid command.");
         }
@@ -223,6 +227,29 @@ function setPrice(source, command) {
   }
 }
 
+function setMode(source,command) {
+  if(command[1]) {
+    mode = command[1].toLowerCase()
+    if(mode == "bitcoin") {
+      rclient.set("mode:"+source, mode);
+      send(source, "Your buying mode has been set to Bitcoin");
+    } else if (mode == "dogecoin") {
+      rclient.set("mode:"+source, mode);
+      send(source, "wow very mode change. such dogecoin");
+    } else {
+        send(source, "I'm sorry, that's not a valid mode. You can select Dogecoin or Bitcoin.");
+    }
+  } else {
+    rclient.get("mode:"+source, function(err, obj){
+      if(obj){
+        send(source, "Your current buying mode is " + obj);
+      } else {
+        send(source, "Your current buying mode is bitcoin");
+      }
+    });
+  }
+}
+
 // Implement 'inventory'
 function displayInv(source) {
   checkInv(function(stock){
@@ -243,24 +270,60 @@ function buy(source, command) {
         return;
       }
       if(!(config.admins.indexOf(source) > -1)) {
-        order = price * command[1];
-        var param = {
-          "button": {
-            "name": command[1] + " TF2 Keys",
-            "price_string": order,
-            "price_currency_iso": 'USD',
-            "custom": JSON.stringify({'user': source, 'amount': command[1]}),
-            "description": 'For user ' + source,
-            "type": 'buy_now',
-            "style": 'custom_large'
-          }
-        };
-        coin.buttons.create(param, function (err, data) {
-          if (err) {
-            send(source, "An error occurred and my creator has been notified. Please try again.");
-            console.error("ERR: " + source + ": " + err);
-          } else {
-            send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+        rclient.get("mode:" + source, function(err, rawmode){
+          mode = rawmode.toLowerCase();
+          if(mode == "bitcoin" || !mode) {
+            order = price * command[1];
+            var param = {
+              "button": {
+                "name": command[1] + " TF2 Keys",
+                "price_string": order,
+                "price_currency_iso": 'USD',
+                "custom": JSON.stringify({'user': source, 'amount': command[1]}),
+                "description": 'For user ' + source,
+                "type": 'buy_now',
+                "style": 'custom_large'
+              }
+            };
+            coin.buttons.create(param, function (err, data) {
+              if (err) {
+                send(source, "An error occurred and my creator has been notified. Please try again.");
+                console.error("ERR: " + source + ": " + err);
+              } else {
+                send(source, "Coinbase is ready to accept your payment, click here: https://coinbase.com/checkouts/"+data['button']['code']);
+              }
+            });
+          } else if(mode == "dogecoin") {
+            rclient.get("address:"+source, function(err, address) { // get deposit address for the user
+              doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
+                http.get("http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=132", function(res) { // get trade data from Cryptsy
+                  data = '';
+                  res.on('data', function(chunk) {
+                    data  += chunk;
+                  });
+                  res.on('end', function() {
+                    dprice = JSON.parse(data)["return"]["markets"]["DOGE"]["lasttradeprice"]; // all that just to get the current DOGE price... in BTC
+                    coin.currencies.exchangeRates(function (err, data){
+                      dprice *= data["btc_to_usd"]; // Now we have the price of DOGE in USD!
+                      dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
+                      // Now we need to check the user's balance against the amount they want
+
+                      if(balance < dprice * command[1]) {
+                        send(source, "Please deposit " + ((dprice * command[1]) - balance) +" DOGE to " + address + " , then trying buying again.");
+                      } else {
+                        doge.withdraw(dprice * command[1], config.dogeAddr, function (err, id){
+                          if(!err) {
+                            rclient.incrby("keys:"+source, command[1]);
+                            rclient.incrby("reserved", command[1]);
+                            send(source, "Send a trade request when you are ready!");
+                          }
+                        });
+                      }
+                    });
+                  });
+                });
+              });
+            });
           }
         });
       } else {
