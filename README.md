@@ -1,6 +1,8 @@
 Botcoin
 =======
 
+Experimental DOGE branch. It's probably broken.
+
 A Steam bot that buys and sells TF2 items for Bitcoin
 
 Currently live at http://steamcommunity.com/id/botcoin/
