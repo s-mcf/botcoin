@@ -239,7 +239,7 @@ function getBalance(source, callback) {
       });
     } else {
       doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
-        balance = parseInt(balance);
+        balance = parseFloat(balance);
         if(balance) {
           rclient.get("spent:"+source, function(err, spent){
             if(spent) {
@@ -337,7 +337,8 @@ function buy(source, command) {
                 data  += chunk;
               });
               res.on('end', function() {
-                dprice = parseInt(data);
+                console.log(data);
+                dprice = parseFloat(data);
                 dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
                 getBalance(source, function(balance, address){
                   if(balance < dprice * command[1]) {
