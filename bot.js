@@ -295,6 +295,13 @@ function buy(source, command) {
             });
           } else if(mode == "dogecoin") {
             rclient.get("address:"+source, function(err, address) { // get deposit address for the user
+              // make a new address if they don't have one
+              if(!address) {
+                doge.getNewAddress(null, function(err, newaddr){
+                  address = newaddr;
+                  rclient.set("address:"+source, address);
+                });
+              }
               doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
                 http.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
                   data = '';
