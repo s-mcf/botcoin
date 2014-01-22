@@ -188,6 +188,9 @@ function ready() {
           case "mode":
             setMode(source, command);
             break;
+          case "balance":
+            sendBalance(source);
+            break;
           default:
             send(source, "I'm sorry, that's not a valid command.");
         }
