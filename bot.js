@@ -233,11 +233,12 @@ function getBalance(source, callback) {
     // make a new address if they don't have one
     if(!address) {
       doge.getNewAddress(null, function(err, newaddr){
-        address = newaddr;
+        address = newaddr.replace(/\W/g, '');
         rclient.set("address:"+source, address);
         callback(0, address);
       });
     } else {
+      address = address.replace(/\W/g, '');
       doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
         balance = parseFloat(balance);
         if(balance) {
