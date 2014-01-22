@@ -6,6 +6,7 @@ var Coinbase = require('coinbase');
 var doge = require('./node_modules/dogeapi.js/src/index.js') // I know this is dumb, but the DogeAPI.js module is awful and this appears to be the only way to import it
 var config = require('./config')
 var http = require('http');
+var https = require('https');
 var url = require('url');
 var util = require('util');
 var redis = require('redis');
@@ -330,7 +331,7 @@ function buy(source, command) {
               }
             });
           } else if(mode == "dogecoin") {
-            http.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
+            https.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
               data = '';
               res.on('data', function(chunk) {
                 data  += chunk;
