@@ -349,7 +349,7 @@ function buy(source, command) {
                   } else {
                     rclient.incrby("spent:"+source, command[1] * dprice);
                     rclient.incrby("keys:"+source, command[1]);
-                    rclient.incrby("sold:"+source, command[1]);
+                    rclient.incrby("sold", command[1]);
                     rclient.incrby("reserved", command[1]);
                     send(source, "Send a trade request when you are ready!");
                   }
