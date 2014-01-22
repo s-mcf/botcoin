@@ -221,6 +221,39 @@ function ready() {
 
 // ---- Commands ---- //
 
+function sendBalance(source) {
+  getBalance(source, function(balance, address){
+    send(source, "Your current balance is " + balance + " DOGE");
+  });
+}
+
+function getBalance(source, callback) {
+  rclient.get("address:"+source, function(err, address) { // get deposit address for the user
+    // make a new address if they don't have one
+    if(!address) {
+      doge.getNewAddress(null, function(err, newaddr){
+        address = newaddr;
+        rclient.set("address:"+source, address);
+        callback(0, address);
+      });
+    } else {
+      doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
+        balance = parseInt(balance);
+        if(balance) {
+          rclient.get("spent:"+source, function(err, spent){
+            if(spent) {
+              balance -= spent;
+            }
+            callback(balance, address);
+          });
+        } else {
+          callback(0, address);
+        }
+      });
+    }
+  });
+}
+
 function setPrice(source, command) {
   if(!(config.admins.indexOf(source) > -1) || isNaN(command[1])) {
     send(source, "The current key price is $" + price);
@@ -297,43 +330,27 @@ function buy(source, command) {
               }
             });
           } else if(mode == "dogecoin") {
-            rclient.get("address:"+source, function(err, address) { // get deposit address for the user
-              // make a new address if they don't have one
-              if(!address) {
-                doge.getNewAddress(null, function(err, newaddr){
-                  address = newaddr;
-                  rclient.set("address:"+source, address);
-                });
-              }
-              doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
-                http.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
-                  data = '';
-                  res.on('data', function(chunk) {
-                    data  += chunk;
-                  });
-                  res.on('end', function() {
-                    dprice = parseInt(data);
-                    dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
-                    // Now we need to check the user's balance against the amount they want
-
-                    rclient.get("spent:"+source, function(err, spent){
-                      if(spent) {
-                        balance -= spent;
-                      }
-                      if(balance < dprice * command[1]) {
-                        // The total price of the order, minus their current balance, plus an extra 10 doge per key in case the price moves
-                        // The 10 extra is not spent on keys and remains in the user's balance for future purchasesd
-                        deposit = ((dprice * command[1]) - balance) + (10 * command[1]);
-                        send(source, "Please deposit " + deposit +" DOGE to " + address + " , then trying buying again.");
-                      } else {
-                        rclient.incrby("spent:"+source, command[1] * dprice);
-                        rclient.incrby("keys:"+source, command[1]);
-                        rclient.incrby("sold:"+source, command[1]);
-                        rclient.incrby("reserved", command[1]);
-                        send(source, "Send a trade request when you are ready!");
-                      }
-                    });
-                  });
+            http.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
+              data = '';
+              res.on('data', function(chunk) {
+                data  += chunk;
+              });
+              res.on('end', function() {
+                dprice = parseInt(data);
+                dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
+                getBalance(source, function(balance, address){
+                  if(balance < dprice * command[1]) {
+                    // The total price of the order, minus their current balance, plus an extra 10 doge per key in case the price moves
+                    // The 10 extra is not spent on keys and remains in the user's balance for future purchasesd
+                    deposit = ((dprice * command[1]) - balance) + (10 * command[1]);
+                    send(source, "Please deposit " + deposit +" DOGE to " + address + " , then trying buying again.");
+                  } else {
+                    rclient.incrby("spent:"+source, command[1] * dprice);
+                    rclient.incrby("keys:"+source, command[1]);
+                    rclient.incrby("sold:"+source, command[1]);
+                    rclient.incrby("reserved", command[1]);
+                    send(source, "Send a trade request when you are ready!");
+                  }
                 });
               });
             });
