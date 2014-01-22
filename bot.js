@@ -296,17 +296,15 @@ function buy(source, command) {
           } else if(mode == "dogecoin") {
             rclient.get("address:"+source, function(err, address) { // get deposit address for the user
               doge.getAddressReceived(address, null, function(err, balance) { // find the user's balance
-                http.get("http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=132", function(res) { // get trade data from Cryptsy
+                http.get("https://dogeapi.com/wow/?a=get_current_price", function(res) { // get latest price from DogeAPI
                   data = '';
                   res.on('data', function(chunk) {
                     data  += chunk;
                   });
                   res.on('end', function() {
-                    dprice = JSON.parse(data)["return"]["markets"]["DOGE"]["lasttradeprice"]; // all that just to get the current DOGE price... in BTC
-                    coin.currencies.exchangeRates(function (err, data){
-                      dprice *= data["btc_to_usd"]; // Now we have the price of DOGE in USD!
-                      dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
-                      // Now we need to check the user's balance against the amount they want
+                    dprice = parseInt(data);
+                    dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
+                    // Now we need to check the user's balance against the amount they want
 
                       if(balance < dprice * command[1]) {
                         send(source, "Please deposit " + ((dprice * command[1]) - balance) +" DOGE to " + address + " , then trying buying again.");
