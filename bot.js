@@ -306,16 +306,21 @@ function buy(source, command) {
                     dprice = price / dprice; // And now we have the amount of DOGE required for one key. Whew!
                     // Now we need to check the user's balance against the amount they want
 
+                    rclient.get("spent:"+source, function(err, spent){
+                      if(spent) {
+                        balance -= spent;
+                      }
                       if(balance < dprice * command[1]) {
-                        send(source, "Please deposit " + ((dprice * command[1]) - balance) +" DOGE to " + address + " , then trying buying again.");
+                        // The total price of the order, minus their current balance, plus an extra 10 doge per key in case the price moves
+                        // The 10 extra is not spent on keys and remains in the user's balance for future purchasesd
+                        deposit = ((dprice * command[1]) - balance) + (10 * command[1]);
+                        send(source, "Please deposit " + deposit +" DOGE to " + address + " , then trying buying again.");
                       } else {
-                        doge.withdraw(dprice * command[1], config.dogeAddr, function (err, id){
-                          if(!err) {
-                            rclient.incrby("keys:"+source, command[1]);
-                            rclient.incrby("reserved", command[1]);
-                            send(source, "Send a trade request when you are ready!");
-                          }
-                        });
+                        rclient.incrby("spent:"+source, command[1] * dprice);
+                        rclient.incrby("keys:"+source, command[1]);
+                        rclient.incrby("sold:"+source, command[1]);
+                        rclient.incrby("reserved", command[1]);
+                        send(source, "Send a trade request when you are ready!");
                       }
                     });
                   });
