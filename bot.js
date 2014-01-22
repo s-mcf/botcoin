@@ -343,8 +343,8 @@ function buy(source, command) {
                 getBalance(source, function(balance, address){
                   if(balance < dprice * command[1]) {
                     // The total price of the order, minus their current balance, plus an extra 10 doge per key in case the price moves
-                    // The 10 extra is not spent on keys and remains in the user's balance for future purchasesd
-                    deposit = ((dprice * command[1]) - balance) + (10 * command[1]);
+                    // The 30 extra is not spent on keys and remains in the user's balance for future purchases
+                    deposit = ((dprice * command[1]) - balance) + (30 * command[1]);
                     send(source, "Please deposit " + deposit +" DOGE to " + address + " , then trying buying again.");
                   } else {
                     rclient.incrby("spent:"+source, command[1] * dprice);
