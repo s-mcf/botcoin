@@ -308,8 +308,7 @@ function buy(source, command) {
         return;
       }
       if(!(config.admins.indexOf(source) > -1)) {
-        rclient.get("mode:" + source, function(err, rawmode){
-          mode = rawmode.toLowerCase();
+        rclient.get("mode:" + source, function(err, mode){
           if(mode == "bitcoin" || !mode) {
             order = price * command[1];
             var param = {
